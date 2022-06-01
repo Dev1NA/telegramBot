@@ -31,22 +31,48 @@ public class MainBot extends TelegramLongPollingBot {
     @Value("${bot.token}")
     private String token;
 
+    private static String callback_username = "user_name";
+
+    public static SendMessage sendInlineKeyBoardMessage(long chatId, String answer){
+
+        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
+        InlineKeyboardButton inlineKeyboardButton1 = new InlineKeyboardButton();
+
+        inlineKeyboardButton1.setText("Save username");
+        inlineKeyboardButton1.setCallbackData(callback_username);
+
+        List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
+
+        keyboardButtonsRow1.add(inlineKeyboardButton1);
+
+        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
+        rowList.add(keyboardButtonsRow1);
+
+        inlineKeyboardMarkup.setKeyboard(rowList);
+
+        SendMessage sm = new SendMessage();
+        sm.setChatId(String.valueOf(chatId));
+        sm.setText(answer);
+        sm.setReplyMarkup(inlineKeyboardMarkup);
+        return sm;
+    }
+
     @Override
     public void onUpdateReceived(Update update) {
         if(update.hasMessage() && update.getMessage().hasText()) {
-            String chatId = update.getMessage().getChatId().toString();
-
-            SendMessage sm = new SendMessage();
-            sm.setChatId(chatId);
-            sm.setText("Hello, bro-" + update.getMessage().getFrom().getFirstName() + "!");
-            repo.save(new UserFromTelegram(update.getMessage().getFrom().getFirstName()));
             try {
-                execute(sm);
-
+                execute(sendInlineKeyBoardMessage(update.getMessage().getChatId(), "Hello, bro-" + update.getMessage().getFrom().getFirstName() + "!"));
             } catch (TelegramApiException e) {
                 e.printStackTrace();
             }
         }
+        else if (update.hasCallbackQuery()) {
+            String str = update.getCallbackQuery().getData();
+            if (str.equals(callback_username)) {
+                repo.save(new UserFromTelegram(update.getCallbackQuery().getFrom().getFirstName()));
+            }
+        }
+
     }
 
     @Override
@@ -58,22 +84,5 @@ public class MainBot extends TelegramLongPollingBot {
     public String getBotToken() {
         return token;
     }
-
-//    public static InlineKeyboardMarkup sendInlineKeyBoardMessage(String chatId) {
-//        InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
-//        InlineKeyboardButton inlineKeyboardButton1 = new InlineKeyboardButton();
-//        inlineKeyboardButton1.setText("Save user");
-//        inlineKeyboardButton1.setCallbackData("Button \"Save user\" has been pressed");
-//
-//        List<List<InlineKeyboardButton>> rowList = new ArrayList<>();
-//        List<InlineKeyboardButton> keyboardButtonsRow1 = new ArrayList<>();
-//        keyboardButtonsRow1.add(inlineKeyboardButton1);
-//        rowList.add(keyboardButtonsRow1);
-//
-//        inlineKeyboardMarkup.setKeyboard(rowList);
-//
-//        return inlineKeyboardMarkup;
-//
-//    }
 
 }
